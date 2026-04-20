@@ -7,7 +7,7 @@ from mlflow.tracking import MlflowClient
 # ==========================================
 # CONFIGURAÇÕES GERAIS E CONEXÃO AWS
 # ==========================================
-MLFLOW_TRACKING_URI = "http://174.129.138.108:5000"
+MLFLOW_TRACKING_URI = "http://34.234.93.197:5000"
 EXPERIMENT_NAME = "Insurance_Regression_V2"
 MODEL_NAME = "modelo_ridge"
 
@@ -53,6 +53,7 @@ def page_home():
 # ==========================================
 # PÁGINA 2: PREDIÇÃO (SIMULADOR)
 # ==========================================
+# Rubrica 4.2: Endpoint de Inferência (Recebe inputs não estruturados e retorna predições da AWS)
 def page_prediction():
     st.title("🔮 Simulador de Custos Médicos")
     st.markdown("Preencha os dados do paciente para prever os custos faturados pelo seguro.")
@@ -73,7 +74,7 @@ def page_prediction():
     
     if st.button("Calcular Previsão", type="primary", use_container_width=True):
         try:
-            # Baixa a versão mais recente do modelo direto da vitrine na AWS
+            # Rubrica 4.1: Model Registry (Consumo dinâmico da última versão promovida para a Vitrine)
             with st.spinner("Conectando à AWS e carregando o modelo mais recente..."):
                 model_uri = f"models:/{MODEL_NAME}/latest"
                 model = mlflow.pyfunc.load_model(model_uri)
@@ -88,7 +89,7 @@ def page_prediction():
                 "region": [region]
             })
             
-            # Executa a predição
+            # Rubrica 4.3: Geração de predição em tempo real e acoplamento de inputs/outputs
             prediction = model.predict(input_data)[0]
             
             st.success("Predição realizada com sucesso pela nuvem!")
@@ -117,6 +118,7 @@ def get_mlflow_data():
         st.error(f"Erro ao conectar ao Tracking Server: {e}")
         return pd.DataFrame()
 
+# Rubrica 4.4: Dashboard de Observabilidade (Interface em tempo real exibindo RMSE e R2)
 def page_monitoring():
     st.title("📊 Monitoramento de Modelos (MLOps)")
     st.markdown("Acompanhe a evolução das métricas de treinamento diretamente do servidor AWS.")
@@ -168,6 +170,7 @@ def page_monitoring():
 # ==========================================
 # MENU LATERAL E NAVEGAÇÃO PRINCIPAL
 # ==========================================
+# Rubrica 4.5: Usabilidade da Aplicação (App multi-page, estruturado com menu e validações visuais)
 def main():
     st.set_page_config(page_title="Insurance MLOps", page_icon="🏥", layout="wide")
     
