@@ -49,7 +49,6 @@ model = load_model()
 # FUNÇÃO DE INFERÊNCIA E GERAÇÃO DE MÉTRICAS
 # ==========================================
 def make_real_prediction(age, sex, bmi, children, smoker, region):
-    # Transforma os inputs do formulário no DataFrame esperado pelo Scikit-Learn
     input_data = pd.DataFrame([{
         'age': age, 'sex': sex, 'bmi': bmi, 
         'children': children, 'smoker': smoker, 'region': region
