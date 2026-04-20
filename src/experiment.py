@@ -21,7 +21,7 @@ class ExperimentRunnerDTS:
         # Rubrica 1.1: Projetei e implementei uma arquitetura de MLOps integrada (Tracking Server remoto na AWS).
         # Rubrica 1.2: Configurei infraestrutura de armazenamento e gerenciamento (S3 para artefatos, RDS para metadados).
         logger.info("Inicializando o ambiente de experimentos (MLflow)")
-        mlflow.set_tracking_uri("http://34.234.93.197:5000")
+        mlflow.set_tracking_uri("http://174.129.138.108:5000")
         mlflow.set_experiment("Insurance_Regression_V2")
         
         self.df = DataLoaderDataset().load_data()
