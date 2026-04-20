@@ -25,8 +25,7 @@ A solução foi construída utilizando as seguintes tecnologias:
 ### 1. Ambiente e Infraestrutura
 * **[Rubrica 1.1] Arquitetura Integrada:** Implementada via Tracking Server remoto na AWS conectando código de treino, nuvem e Front-end (`app.py` e `experiment.py`).
 * **[Rubrica 1.2] Armazenamento:** Uso configurado de S3 para artefatos e banco relacional RDS para métricas na instância EC2.
-* **[Rubrica 1.3] Estrutura:** O projeto foi estruturado em uma organização de código adequada à prática de engenharia, 
-    # reduzindo a dependência de notebooks e definindo fluxos claros, Isolamento total da responsabilidade de ingestão de dados..
+* **[Rubrica 1.3] Estrutura:** O projeto foi estruturado em uma organização de código adequada à prática de engenharia, reduzindo a dependência de notebooks e definindo fluxos claros, Isolamento total da responsabilidade de ingestão de dados..
 * **[Rubrica 1.4] Reprodutibilidade:** Garantida no `experiment.py` pelo uso rigoroso de `random_state=42` no split e no pipeline fixo de preprocessamento.
 
 ### 2. Processamento de Dados e Engenharia de Features
