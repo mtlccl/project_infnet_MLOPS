@@ -74,7 +74,6 @@ def page_prediction():
     
     if st.button("Calcular Previsão", type="primary", use_container_width=True):
         try:
-            # Rubrica 4.1: Model Registry (Consumo dinâmico da última versão promovida para a Vitrine)
             with st.spinner("Conectando à AWS e carregando o modelo mais recente..."):
                 model_uri = f"models:/{MODEL_NAME}/latest"
                 model = mlflow.pyfunc.load_model(model_uri)
