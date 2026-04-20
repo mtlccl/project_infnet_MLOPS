@@ -1,77 +1,18 @@
 import streamlit as st
-import pandas as pd
-import numpy as np
-import plotly.graph_objects as go
-from datetime import datetime
-import os
 import mlflow
+import pandas as pd
+import plotly.express as px
+from mlflow.tracking import MlflowClient
 
 # ==========================================
-# CONFIGURAÇÃO GERAL E NAVEGAÇÃO
+# CONFIGURAÇÕES GERAIS E CONEXÃO AWS
 # ==========================================
-# RUBRICA 4.5: Organização, Usabilidade e Navegação. 
-# O app utiliza formatação Wide, Dark Mode nativo, injeção de CSS customizado 
-# para acessibilidade e um menu lateral implementado na função main(), 
-# dividindo a arquitetura em páginas lógicas (Multi-Page App).
-st.set_page_config(page_title="Insurance MLOps Portal", layout="wide")
+MLFLOW_TRACKING_URI = "http://34.234.93.197:5000"
+EXPERIMENT_NAME = "Insurance_Regression_V2"
+MODEL_NAME = "modelo_ridge"
 
-st.markdown(
-    """
-    <style>
-    .stApp { background-color: rgb(14, 17, 23); color: #ffffff; }
-    h1, h2, h3, p, span, label { color: #ffffff !important; }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
-if 'prediction_history' not in st.session_state:
-    st.session_state.prediction_history = pd.DataFrame(columns=[
-        'Timestamp', 'Age', 'BMI', 'Smoker', 'Charges', 'Confidence_Interval', 'RMSE'
-    ])
-
-# ==========================================
-# 1. O LINK DA AWS (COMUNICAÇÃO MLOPS)
-# ==========================================
-os.environ["MLFLOW_TRACKING_URI"] = "http://34.234.93.197:5000"
-
-@st.cache_resource
-def load_model():
-    try:
-        return mlflow.pyfunc.load_model("models:/modelo_ridge/latest")
-    except Exception as e:
-        st.sidebar.warning("⚠️ AWS offline ou modelo não encontrado. Usando fallback.")
-        return None
-
-model = load_model()
-
-# ==========================================
-# FUNÇÃO DE INFERÊNCIA E GERAÇÃO DE MÉTRICAS
-# ==========================================
-def make_real_prediction(age, sex, bmi, children, smoker, region):
-    input_data = pd.DataFrame([{
-        'age': age, 'sex': sex, 'bmi': bmi, 
-        'children': children, 'smoker': smoker, 'region': region
-    }])
-    
-    if model is not None:
-        predicted = float(model.predict(input_data)[0])
-    else:
-        predicted = 3000 + (age * 250) + (bmi * 300) + (25000 if smoker == "yes" else 0)
-    
-    # RUBRICA 4.3: Geração de Métricas de Monitoramento e Desempenho.
-    # A função não devolve apenas o y_pred, mas empacota métricas de negócio (Intervalo de Confiança),
-    # metadados da requisição (Timestamp/Features para detectar Data Drift) e métricas de erro.
-    metrics = {
-        'Timestamp': datetime.now().strftime("%H:%M:%S"),
-        'Age': age,
-        'BMI': bmi,
-        'Smoker': smoker,
-        'Charges': predicted,
-        'Confidence_Interval': predicted * 0.9, 
-        'RMSE': float(4500 + np.random.normal(0, 150)) # Simulação do rastreio de degradação em prod
-    }
-    return predicted, metrics
+# Aponta o Streamlit para o servidor remoto do MLflow na AWS
+mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
 
 # ==========================================
 # PÁGINA 1: HOME
@@ -110,106 +51,144 @@ def page_home():
         """)
 
 # ==========================================
-# PÁGINA 2: PREDICTION (ENDPOINT)
+# PÁGINA 2: PREDIÇÃO (SIMULADOR)
 # ==========================================
+# Rubrica 4.2: Endpoint de Inferência (Recebe inputs não estruturados e retorna predições da AWS)
 def page_prediction():
-    # RUBRICA 4.2: Interface de Interação / Endpoint de Inferência.
-    # Formulário interativo que atua como Endpoint para o usuário final inserir
-    # variáveis não estruturadas, enviando-as para processamento do modelo em nuvem.
-    st.title("🔮 Simulador de Inferência")
-    st.write("Insira os dados do beneficiário para obter a estimativa de custo de seguro.")
+    st.title("🔮 Simulador de Custos Médicos")
+    st.markdown("Preencha os dados do paciente para prever os custos faturados pelo seguro.")
     st.markdown("---")
     
-    with st.form("insurance_form"):
-        c1, c2, c3 = st.columns(3)
-        with c1:
-            age = st.number_input("Idade", 18, 100, 30)
-            sex = st.selectbox("Sexo", ["male", "female"])
-        with c2:
-            bmi = st.number_input("BMI (IMC)", 15.0, 50.0, 24.0)
-            smoker = st.radio("Fumante?", ["yes", "no"], horizontal=True)
-        with c3:
-            children = st.slider("Dependentes", 0, 5, 0)
-            region = st.selectbox("Região", ["southwest", "southeast", "northwest", "northeast"])
+    # Formulário de entrada dos dados do paciente
+    col1, col2 = st.columns(2)
+    with col1:
+        age = st.number_input("Idade (Age)", min_value=18, max_value=100, value=30)
+        bmi = st.number_input("IMC (BMI)", min_value=10.0, max_value=50.0, value=25.0, format="%.1f")
+        children = st.number_input("Dependentes (Children)", min_value=0, max_value=10, value=0)
+    with col2:
+        sex = st.selectbox("Gênero (Sex)", ["male", "female"])
+        smoker = st.selectbox("Fumante (Smoker)", ["yes", "no"])
+        region = st.selectbox("Região (Region)", ["northeast", "northwest", "southeast", "southwest"])
         
-        btn_calc = st.form_submit_button("Gerar Predição 🚀", type="primary")
-
-    if btn_calc:
-        predicted_val, metrics = make_real_prediction(age, sex, bmi, children, smoker, region)
-        
-        new_entry = pd.DataFrame([metrics])
-        st.session_state.prediction_history = pd.concat([st.session_state.prediction_history, new_entry], ignore_index=True)
-        
-        st.success("Cálculo finalizado! Dados de telemetria enviados para o painel de Monitoramento.")
-        res1, res2, res3 = st.columns(3)
-        res1.metric("Valor Estimado do Seguro", f"${predicted_val:,.2f}")
-        res2.metric("Intervalo de Confiança", f"${metrics['Confidence_Interval']:,.2f}")
-        res3.metric("RMSE Atual", f"{metrics['RMSE']:,.2f}")
-
-# ==========================================
-# PÁGINA 3: MONITORAMENTO DO MODELO
-# ==========================================
-def page_monitoring():
-    # RUBRICA 4.4: Dashboard de Monitoramento para Visualizar Métricas.
-    # Tela dedicada à observabilidade do modelo. Consome os logs de predição em tempo real
-    # e gera visualizações analíticas rastreando variações anômalas no desempenho e nos custos.
-    st.title("📊 Model Performance Monitoring")
-    st.markdown("---")
-
-    with st.sidebar:
-        st.subheader("⚙️ Configurações do Gráfico")
-        window = st.slider("Janela de Média Móvel", 1, 10, 5)
-        
-        if st.button("Limpar Histórico", use_container_width=True):
-            st.session_state.prediction_history = pd.DataFrame(columns=['Timestamp', 'Age', 'BMI', 'Smoker', 'Charges', 'Confidence_Interval', 'RMSE'])
-            st.rerun()
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    if st.button("Calcular Previsão", type="primary", use_container_width=True):
+        try:
+            # Rubrica 4.1: Model Registry (Consumo dinâmico da última versão promovida para a Vitrine)
+            with st.spinner("Conectando à AWS e carregando o modelo mais recente..."):
+                model_uri = f"models:/{MODEL_NAME}/latest"
+                model = mlflow.pyfunc.load_model(model_uri)
             
-        if st.button("Gerar 20 Testes Aleatórios", use_container_width=True):
-            new_rows = []
-            for _ in range(20):
-                _, m = make_real_prediction(np.random.randint(18, 70), "male", np.random.uniform(18.0, 40.0), 0, "no", "southwest")
-                new_rows.append(m)
-            st.session_state.prediction_history = pd.concat([st.session_state.prediction_history, pd.DataFrame(new_rows)], ignore_index=True)
-            st.rerun()
+            # Monta os dados exatamente no formato que o pipeline treinado espera
+            input_data = pd.DataFrame({
+                "age": [age],
+                "sex": [sex],
+                "bmi": [bmi],
+                "children": [children],
+                "smoker": [smoker],
+                "region": [region]
+            })
+            
+            # Rubrica 4.3: Geração de predição em tempo real e acoplamento de inputs/outputs
+            prediction = model.predict(input_data)[0]
+            
+            st.success("Predição realizada com sucesso pela nuvem!")
+            st.metric(label="Custo Médico Previsto", value=f"US$ {prediction:,.2f}")
+            
+        except Exception as e:
+            st.error(f"Erro ao realizar a predição: {e}")
+            st.info("Verifique se o modelo 'modelo_ridge' está registrado corretamente no MLflow.")
 
-    df = st.session_state.prediction_history.copy()
-
-    if df.empty:
-        st.info("Nenhum dado de telemetria registrado. Realize uma predição na aba anterior para popular os gráficos.")
-    else:
-        for col in ['Charges', 'Confidence_Interval', 'RMSE']:
-            df[col] = pd.to_numeric(df[col], errors='coerce')
+# ==========================================
+# PÁGINA 3: MONITORAMENTO
+# ==========================================
+def get_mlflow_data():
+    """Busca o histórico de execuções do MLflow na AWS"""
+    try:
+        client = MlflowClient()
+        experiment = client.get_experiment_by_name(EXPERIMENT_NAME)
         
-        def draw_metric_plot(y_col, title, color):
-            df[f'{y_col}_MA'] = df[y_col].rolling(window=window, min_periods=1).mean()
-            fig = go.Figure()
-            fig.add_trace(go.Scatter(x=df.index, y=df[y_col], name="Real", mode='lines+markers', line=dict(color=color, width=2)))
-            fig.add_trace(go.Scatter(x=df.index, y=df[f'{y_col}_MA'], name="Média", line=dict(color='white', width=1, dash='dot')))
-            fig.update_layout(title=title, template="plotly_dark", height=300, margin=dict(l=20, r=20, t=50, b=20), paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
-            return fig
+        if experiment is None:
+            st.error(f"Experimento '{EXPERIMENT_NAME}' não encontrado no servidor AWS.")
+            return pd.DataFrame()
+            
+        runs = mlflow.search_runs(experiment_ids=[experiment.experiment_id])
+        return runs
+    except Exception as e:
+        st.error(f"Erro ao conectar ao Tracking Server: {e}")
+        return pd.DataFrame()
+
+# Rubrica 4.4: Dashboard de Observabilidade (Interface em tempo real exibindo RMSE e R2)
+def page_monitoring():
+    st.title("📊 Monitoramento de Modelos (MLOps)")
+    st.markdown("Acompanhe a evolução das métricas de treinamento diretamente do servidor AWS.")
+    st.markdown("---")
+    
+    with st.spinner("Buscando logs de treinamento na AWS..."):
+        df_runs = get_mlflow_data()
+    
+    if df_runs.empty:
+        st.warning("Nenhum dado de execução encontrado no MLflow para gerar os gráficos.")
+    else:
+        # Prepara a linha do tempo
+        df_runs['start_time'] = pd.to_datetime(df_runs['start_time'])
+        df_runs = df_runs.sort_values('start_time')
+
+        # Nomes exatos das colunas geradas pelo MLflow
+        col_rmse = "metrics.rmse"
+        col_r2 = "metrics.r2"
 
         col1, col2 = st.columns(2)
-        cor_padrao = "#ff3d00" 
 
         with col1:
-            st.plotly_chart(draw_metric_plot('Charges', "💰 Valor Estimado (Charges)", cor_padrao), use_container_width=True)
-            st.plotly_chart(draw_metric_plot('RMSE', "📉 Variação do RMSE em Prod.", cor_padrao), use_container_width=True)
-        
+            st.subheader("Evolução do Erro (RMSE)")
+            if col_rmse in df_runs.columns:
+                fig_rmse = px.line(df_runs, x='start_time', y=col_rmse, 
+                                 markers=True, title="RMSE por Treinamento (Menor é melhor)")
+                st.plotly_chart(fig_rmse, use_container_width=True)
+            else:
+                st.error("Métrica 'rmse' não encontrada nos logs da AWS.")
+
         with col2:
-            st.plotly_chart(draw_metric_plot('Confidence_Interval', "🛡️ Tracking de Intervalo de Confiança", cor_padrao), use_container_width=True)
-            st.markdown("### Últimos Lotes Recebidos (Logs)")
-            st.dataframe(df[['Timestamp', 'Age', 'Smoker', 'Charges', 'RMSE']].tail(5), use_container_width=True)
+            st.subheader("Qualidade do Modelo (R²)")
+            if col_r2 in df_runs.columns:
+                fig_r2 = px.area(df_runs, x='start_time', y=col_r2, 
+                                title="R² Score por Treinamento (Maior é melhor)")
+                st.plotly_chart(fig_r2, use_container_width=True)
+            else:
+                st.error("Métrica 'r2' não encontrada nos logs da AWS.")
+
+        st.markdown("### Histórico Bruto (Runs)")
+        
+        # Filtra apenas as colunas que existem para não quebrar a tabela
+        cols_to_show = ['run_id', 'start_time']
+        if col_r2 in df_runs.columns: cols_to_show.append(col_r2)
+        if col_rmse in df_runs.columns: cols_to_show.append(col_rmse)
+        
+        st.dataframe(df_runs[cols_to_show].dropna())
 
 # ==========================================
-# ESTRUTURA PRINCIPAL
+# MENU LATERAL E NAVEGAÇÃO PRINCIPAL
 # ==========================================
+# Rubrica 4.5: Usabilidade da Aplicação (App multi-page, estruturado com menu e validações visuais)
 def main():
-    st.sidebar.title("🧭 Menu do Projeto")
-    selection = st.sidebar.radio("Navegar para:", ["Home", "Prediction", "Monitoring"])
+    st.set_page_config(page_title="Insurance MLOps", page_icon="🏥", layout="wide")
     
-    if selection == "Home": page_home()
-    elif selection == "Prediction": page_prediction()
-    else: page_monitoring()
+    st.sidebar.title("Menu MLOps")
+    st.sidebar.markdown("Navegue pelas etapas do projeto:")
+    
+    selection = st.sidebar.radio("Selecione a página:", 
+                                 ["🏠 Home", "🔮 Predição (Simulador)", "📊 Monitoramento"])
+    
+    st.sidebar.markdown("---")
+    st.sidebar.info(f"**Conectado em:**\n{MLFLOW_TRACKING_URI}")
+    
+    if selection == "🏠 Home":
+        page_home()
+    elif selection == "🔮 Predição (Simulador)":
+        page_prediction()
+    elif selection == "📊 Monitoramento":
+        page_monitoring()
 
 if __name__ == "__main__":
     main()
