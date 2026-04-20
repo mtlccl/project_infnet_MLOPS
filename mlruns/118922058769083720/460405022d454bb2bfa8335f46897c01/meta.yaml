@@ -1,0 +1,15 @@
+artifact_uri: file:///C:/Users/matle/Music/MLOps_pjt_infnet/mlruns/118922058769083720/460405022d454bb2bfa8335f46897c01/artifacts
+end_time: 1776653331937
+entry_point_name: ''
+experiment_id: '118922058769083720'
+lifecycle_stage: active
+run_id: 460405022d454bb2bfa8335f46897c01
+run_name: Linear_PCA
+run_uuid: 460405022d454bb2bfa8335f46897c01
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1776653330359
+status: 3
+tags: []
+user_id: matle

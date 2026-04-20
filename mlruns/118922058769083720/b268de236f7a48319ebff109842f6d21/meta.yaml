@@ -1,0 +1,15 @@
+artifact_uri: file:///C:/Users/matle/Music/MLOps_pjt_infnet/mlruns/118922058769083720/b268de236f7a48319ebff109842f6d21/artifacts
+end_time: 1776682974892
+entry_point_name: ''
+experiment_id: '118922058769083720'
+lifecycle_stage: active
+run_id: b268de236f7a48319ebff109842f6d21
+run_name: Ridge_CV_Tuning
+run_uuid: b268de236f7a48319ebff109842f6d21
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1776682973056
+status: 3
+tags: []
+user_id: matle

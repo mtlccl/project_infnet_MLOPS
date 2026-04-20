@@ -1,0 +1,15 @@
+artifact_uri: file:///C:/Users/matle/Music/MLOps_pjt_infnet/mlruns/118922058769083720/96f14565e1e845b18da8c51bcfa1770a/artifacts
+end_time: 1776653330357
+entry_point_name: ''
+experiment_id: '118922058769083720'
+lifecycle_stage: active
+run_id: 96f14565e1e845b18da8c51bcfa1770a
+run_name: Linear_Baseline
+run_uuid: 96f14565e1e845b18da8c51bcfa1770a
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1776653328216
+status: 3
+tags: []
+user_id: matle
