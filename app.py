@@ -33,7 +33,7 @@ if 'prediction_history' not in st.session_state:
 # ==========================================
 # 1. O LINK DA AWS (COMUNICAÇÃO MLOPS)
 # ==========================================
-os.environ["MLFLOW_TRACKING_URI"] = "http://34.234.93.197:5000"
+os.environ["MLFLOW_TRACKING_URI"] = "http://174.129.138.108:5000"
 
 @st.cache_resource
 def load_model():
