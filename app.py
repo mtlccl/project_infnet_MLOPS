@@ -7,7 +7,7 @@ from mlflow.tracking import MlflowClient
 # ==========================================
 # CONFIGURAÇÕES GERAIS E CONEXÃO AWS
 # ==========================================
-MLFLOW_TRACKING_URI = "http://34.234.93.197:5000"
+MLFLOW_TRACKING_URI = "http://174.129.138.108:5000"
 EXPERIMENT_NAME = "Insurance_Regression_V2"
 MODEL_NAME = "modelo_ridge"
 
